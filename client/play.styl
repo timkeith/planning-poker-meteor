@@ -1,0 +1,88 @@
+indent = 20px
+
+.indent
+  margin-left: indent
+
+.estimators
+  margin-left: indent
+  div
+    margin-left: indent
+
+.tasks
+  //.head
+  //  font-weight: bold
+  .curr
+    font-weight: bold
+    a
+      color: black
+  .estimate
+    width: 5em
+    display: inline-block
+    text-align: right
+    padding-right: indent
+  .num
+    width: 2em
+    display: inline-block
+    text-align: right
+  a
+    text-decoration: none
+  a:focus
+    outline: 0
+
+table.votes
+  margin-bottom: 1em
+  tr
+    td
+      padding-left: indent
+    td:first-child
+      text-align: right
+
+.estimating
+  margin-left: indent
+  h3
+    margin-left: -(indent)
+  h4
+    margin-bottom: 0
+    .desc
+      display: inline
+      font-size: 90%
+      font-weight: normal
+  .task
+    font-weight: bold
+    font-size: 120%
+    padding-bottom: 0.5em
+  button.choice
+    width: 2.5em
+    height: 2.5em
+    margin: .2em
+    margin-top: .8em
+  button.active
+    border: 2px solid black
+  button:active
+    border: 2px solid black
+  .est
+    display: inline
+    font-weight: bold
+    font-size: 110%
+  div.voted
+    margin-left: 1em
+    margin-bottom: 1em
+    span
+      padding-left: .5em
+    span.not-voted
+      color: #c0c0c0
+  .mod
+    height: 4em
+    a
+      font-weight: bold
+      font-size: 110%
+
+div#done, div#notdone
+  margin-top: 2em
+  //a
+  //  font-weight: bold
+  //  font-size: 110%
+
+a#join, div#done a, div#notdone a
+  font-weight: bold
+  font-size: 110%

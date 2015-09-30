@@ -1,0 +1,40 @@
+template(name='admin')
+  #users
+    h3 Users:
+    if $eq 0 users.length
+      i none
+    else
+      table
+        tr
+          th
+          th ID
+          th Username
+          th e-mail
+        each users
+          tr
+            td
+              if isAdmin
+                a#deleteUser(href='#', title='Delete'): span.glyphicon.glyphicon-remove
+            td #{_id}
+            td #{username}
+            td #{email}
+
+  #games
+    h3 Games:
+    if $eq 0 games.length
+      i none
+    else
+      table
+        tr
+          th
+          th ID
+          th Name
+          th Moderator
+        each games
+          tr
+            td
+              if isAdmin
+                a#deleteGame(href='#', title='Delete'): span.glyphicon.glyphicon-remove
+            td #{_id}
+            td #{name}
+            td #{modEmail}

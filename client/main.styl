@@ -1,0 +1,57 @@
+body
+  font-family: Arial
+  margin-left: .5em
+
+h1, h2, h3
+  color: #005580
+  a, a:focus
+    color: #005580
+    text-decoration: none
+
+h1
+  font-size: 250%
+
+h3
+  font-size: 133%
+h4
+  font-size: 120%
+h5
+  margin-bottom: 0
+
+// main.jade
+.error
+  margin-top: .2em
+  height: 1em
+  color: red
+
+a.disabled
+  pointer-events: none !important;
+  cursor: default;
+  color: gray;
+
+.bordered
+  border: 1px solid blue
+
+form#join, form#email
+  padding-top: 0
+  padding-bottom: 0
+  margin-bottom: 0
+  input
+    padding-bottom: 0
+    margin-bottom: 0
+
+form#createGame
+  td
+    //vertical-align: top
+
+.showGame
+  .buttons
+    width: 1em
+    display: inline-block
+    a
+      display: none
+.showGame:hover
+  .buttons
+    a
+      display: inline-block
+      color: #808080

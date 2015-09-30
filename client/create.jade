@@ -1,0 +1,62 @@
+template(name='create')
+  +doCreate(doCreateData)
+
+template(name='doCreate')
+  h3 Create an estimation session
+  form#createGame
+    table
+      tr
+        td Moderator:
+        td
+        td #{username} (#{email})
+        td
+      tr
+        td Session&nbsp;Name:
+        td
+        td(colspan='2')
+          input(type='text', placeholder='Name of planning session',
+            name='name', value='#{defaultName}', required)
+      tr
+        td Tasks:
+        td
+        td
+          if importing
+            +importForm
+          else
+            a#import(href='#') Import from Github
+      each asTask tasks
+        tr.task
+          td
+          td #{num}.
+          td #{desc}
+          td
+            with(num=num parent=..)
+              a#delete(href='#', title='Delete task'): span.glyphicon.glyphicon-remove
+      tr.task.addTask
+        td
+        td #{nextTask}.
+        +addTask
+      if tasks
+        tr
+          td: button.btn#start Start
+          td(colspan='3')  Begin the estimation session
+      else
+        tr
+          td: button.btn(disabled) Start
+          td(colspan='3') Add some tasks before starting the session
+
+// This is a separate template to allow the nested form to work
+template(name='addTask')
+  td
+    form.addTask
+      input(name='desc', type='text', placeholder='Task description', required)
+  td
+    a#add(href='#', title='Add task'): span.glyphicon.glyphicon-plus
+
+template(name='importForm')
+  form#import
+    input(name='from', type='text', placeholder='GitHub user/repo', required)
+    button.btn(type='submit') Import
+  if error
+    .error #{error}
+
