@@ -62,10 +62,7 @@ template
       if not email?
         return @setError "The email address is required"
       u = Meteor.users.findOne 'emails.0.address': email
-      log 'u', u
       if not u?
-        for u in Meteor.users.find().fetch()
-          log u
         return @setError "There is no user with email address '#{email}'"
       g = Games.find({mod: u._id, state: {$ne: GameStates.Done}}, {sort: {createdAt: -1}})
       @setGames(g.fetch())

@@ -26,7 +26,7 @@
     return set
 
 class @SessionVar
-  constructor: (@name) ->
+  constructor: (@name, value) -> @set value
   toString: () -> "#{@name}=#{get()}"
   get: () -> Session.get @name
   set: (value) -> Session.set @name, value
@@ -57,7 +57,8 @@ class @SessionVar
 # Conditional expression
 UI.registerHelper 'cond', (test, a, b) -> if test then a else b
 
-UI.registerHelper 'stringify', (x) -> JSON.stringify(x)
+@stringify = (x) -> JSON.stringify(x)
+UI.registerHelper 'stringify', stringify
 
 UI.registerHelper 'isEmpty', (x) -> _.isEmpty(x)
 

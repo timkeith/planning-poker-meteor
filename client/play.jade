@@ -7,6 +7,9 @@ template(name='play')
       div#notdone
         a(href='#') Not Done
         | &nbsp;&ndash; mark the planning session as not complete
+      div#delete
+        a(href='#') Delete
+        | &nbsp;&ndash; delete the planning session (can't be undone)
   else if iAmWaiting
     .indent
       a#join(href='#') Join

@@ -14,6 +14,9 @@ template
     'click #unjoin':  (e) -> @setWaiting(User.id())
     'click #done':    (e) -> @setDone()
     'click #notdone': (e) -> @setShowing()
+    'click #delete':  (e) ->
+      @delete()
+      Router.go('/')
 
 template
   name: 'estimators'

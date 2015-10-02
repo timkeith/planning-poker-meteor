@@ -9,7 +9,6 @@ Router.route '/play/:gameId',
   action: () ->
     game = Games.findOne @params.gameId
     if not game?
-      util.log "No game with id #{@params.gameId}"
       @render 'badGameId', data: () -> id: @params.gameId
       return
     game.debug = true if @params.query.debug

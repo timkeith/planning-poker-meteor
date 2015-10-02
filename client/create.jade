@@ -8,17 +8,24 @@ template(name='doCreate')
       tr
         td Moderator:
         td
-        td #{username} (#{email})
         td
+        td #{username} (#{email})
       tr
         td Session&nbsp;Name:
         td
-        td(colspan='2')
+        td
+        td
           input(type='text', placeholder='Name of planning session',
             name='name', value='#{defaultName}', required)
       tr
+        td Session&nbsp;URL:
+        td
+        td
+        td #{url}
+      tr
         td Tasks:
         td
+        td.delete
         td
           if importing
             +importForm
@@ -28,30 +35,30 @@ template(name='doCreate')
         tr.task
           td
           td #{num}.
-          td #{desc}
-          td
+          td.delete
             with(num=num parent=..)
-              a#delete(href='#', title='Delete task'): span.glyphicon.glyphicon-remove
+              a(href='#', title='Delete task'): span.glyphicon.glyphicon-remove
+          td #{desc}
       tr.task.addTask
         td
         td #{nextTask}.
-        +addTask
-      if tasks
-        tr
+        td
+        td
+          +addTask
+      tr
+        if tasks
           td: button.btn#start Start
-          td(colspan='3')  Begin the estimation session
-      else
-        tr
+          td(colspan='3') Begin the estimation session
+        else
           td: button.btn(disabled) Start
           td(colspan='3') Add some tasks before starting the session
 
 // This is a separate template to allow the nested form to work
 template(name='addTask')
-  td
+  .text
     form.addTask
       input(name='desc', type='text', placeholder='Task description', required)
-  td
-    a#add(href='#', title='Add task'): span.glyphicon.glyphicon-plus
+      button.btn#add(type='submit') Add
 
 template(name='importForm')
   form#import

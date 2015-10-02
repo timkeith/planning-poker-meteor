@@ -2,10 +2,12 @@ log = util.log
 
 class DoCreateData
   constructor: () ->
-    @_tasks = new SessionVar('tasks')
-    @_tasks.set([])
+    @_tasks = new SessionVar('tasks', [])
     @_importing = new ReactiveVar(false)
     @_error = new ReactiveVar('')
+    @_name = new ReactiveVar()
+    @_gameId = new ReactiveVar()
+    @_setName(@defaultName())
   error:        ()    -> @_error.get()
   setError:     (msg) -> @_error.set(msg)
   importing:    ()    -> @_importing.get()
@@ -15,7 +17,9 @@ class DoCreateData
   defaultName:  ()    -> new Date().toISOString().replace(/T.*/, '-') + User.name()
   username:     ()    -> Meteor.user()?.username
   email:        ()    -> Meteor.user()?.emails?[0]?.address
-
+  _setName:     (name) -> @_name.set(name); @_gameId.set(@_genId(name))
+  path: () -> '/play/' + @_gameId.get()
+  url: () -> window.location.origin + @path()
   addTask: (desc) ->
     if desc
       t = @tasks()
@@ -25,25 +29,18 @@ class DoCreateData
     t = @tasks()
     t.splice(num-1, 1)
     @_tasks.set(t)
-  createGame: (name) ->
-    tasks = []
-    for task in @tasks()
-      delete task.num
-      tasks.push(task)
+  createGame: () ->
+    tasks = (_.omit(task, 'num') for task in @tasks())
     @_tasks.set([])
-    id = @_genId(name)
-    game = new Game(_id: id, name: name, tasks: tasks)
+    game = new Game(_id: @_gameId.get(), name: @_name.get(), tasks: tasks)
     game.insert()
-    return id
   _genId: (name) ->
     base = name.replace /[^-0-9a-zA-Z$.!*'()]+/g, '_'
-    n = 0
-    loop
-      id = base + if n then '.' + n else ''
+    for n in [1..100]
+      id = base + (if n > 1 then '.' + n else '')
       g = Games.findOne id
-      if not g?
-        return id
-      n += 1
+      if not g? then return id
+    throw new Meteor.Error("Failed to generate id for name #{name}")
 
 template
   name: 'create'
@@ -54,21 +51,18 @@ template
   name: 'doCreate'
   events:
     'click a#import': (e) -> @setImporting(true)
-    'click a#delete': (e) -> @parent.removeTask(@num)
+    'click td.delete a': (e) -> @parent.removeTask(@num)
+    'keyup form#createGame input[name="name"]': (e, t) -> @_setName(e.target.value)
+    'focusout form#createGame input[name="name"]': (e, t) -> @_setName(e.target.value)
     'submit form#createGame': (e, t) ->
-      name = e.target.name.value
       # check for a task desc that hasn't been added
       @addTask(t.find('form.addTask input[name="desc"]')?.value)
-      Router.go '/play/' + @createGame(name)
+      @createGame()
+      Router.go @path()
 
 template
   name: 'addTask'
   events:
-    'click a#add': (e, t) ->
-      input = t.$('input')
-      @addTask(input.val())
-      input.val('')
-      input.focus()
     'submit form.addTask': (e) ->
       desc = e.target.desc.value
       e.target.desc.value = ''
@@ -84,7 +78,6 @@ template
       userRepo = userRepo.replace(/^\/*github.com/, '')
       userRepo = userRepo.replace(/^\/*repos/, '')
       userRepo = userRepo.replace(/^\/+/, '')
-      log 'import from', userRepo
       url = "https://api.github.com/repos/#{userRepo}/issues"
       context = @
       HTTP.get url, (err, result) ->
