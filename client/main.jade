@@ -1,52 +1,55 @@
-template(name='main')
+template(name='mainRoot')
+  +MainPage(newMainPage)
+
+template(name='MainPage')
   h3 Create an estimation session
   .indent
     button.btn#create Create
-  +findById(findByIdData)
-  +findByMod(findByModData)
-  +myGames(myGamesData)
+  +FindById(FindById)
+  +FindByMod(FindByMod)
+  +MyGames(MyGames)
 
-template(name='findById')
+template(name='FindById')
   h3 Find estimation session by id
   .indent
     form#join
       label Enter the id of the planning session you wish to join.
       input#id(type='text', placeholder='Session id', name='gameId', required)
       button.btn(type='submit') Join
-    .error #{getError}
+    .error #{error.get}
 
-template(name='findByMod')
+template(name='FindByMod')
   h3 Find estimation sessions by moderator
   .indent
     form#email
       label Enter the email address of the moderator to list their sessions.
       input#email(type='text', placeholder='Email', name='email', required)
       button.btn(type='submit') Show
-    .error #{getError}
-  +showGames(title='' games=games)
+    .error #{error.get}
+  +ShowGames(ShowGames)
 
-template(name='myGames')
+template(name='MyGames')
   h3 My estimation sessions
-  +showGames(title='None' games=gamesNotDone)
-  +showGames(title='Completed sessions:' games=gamesDone)
+  +ShowGames(ShowGames 'notdone')
+  +ShowGames(ShowGames 'done')
 
-template(name='showGames')
-  if title
-    if games
-      if $neq title 'None'
-        h5 #{title}
-    else
-      if $eq title 'None'
-        i None
+template(name='ShowGames')
+  if games
+    if $neq title 'None'
+      h5 #{title}
+  else
+    if $eq title 'None'
+      i None
   each games
     .showGame
-      .buttons
-        if $eq ../title ''
-          // no button - not my games
-        else if $eq ../title 'None'
-          a.complete(href='#', title='Mark session done'): span.glyphicon.glyphicon-ok
-        else
-          a.delete(href='#', title='Delete session'): span.glyphicon.glyphicon-remove
-      a.play(href='#') #{name}
-      | &ndash; #{estimatedCount}/#{tasks.length} tasks estimated
+      +ShowGame(../ShowGame this)
 
+template(name='ShowGame')
+  .buttons
+    if myGame
+      if isDone
+        a.delete(href='#', title='Delete session'): span.glyphicon.glyphicon-remove
+      else
+        a.complete(href='#', title='Mark session done'): span.glyphicon.glyphicon-ok
+  a.play(href='#') #{name}
+  |  &ndash; #{estimatedCount}/#{tasks.length} tasks estimated

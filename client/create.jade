@@ -1,7 +1,7 @@
-template(name='create')
-  +doCreate(doCreateData)
+template(name='createRoot')
+  +CreateForm(newCreateForm)
 
-template(name='doCreate')
+template(name='CreateForm')
   h3 Create an estimation session
   form#createGame
     table
@@ -9,7 +9,7 @@ template(name='doCreate')
         td Moderator:
         td
         td
-        td #{username} (#{email})
+        td #{currentUser.username} (#{currentUserEmail})
       tr
         td Session&nbsp;Name:
         td
@@ -22,48 +22,51 @@ template(name='doCreate')
         td
         td
         td #{url}
+      +TaskList(TaskList)
       tr
-        td Tasks:
-        td
-        td.delete
-        td
-          if importing
-            +importForm
-          else
-            a#import(href='#') Import from Github
-      each asTask tasks
-        tr.task
-          td
-          td #{num}.
-          td.delete
-            with(num=num parent=..)
-              a(href='#', title='Delete task'): span.glyphicon.glyphicon-remove
-          td #{desc}
-      tr.task.addTask
-        td
-        td #{nextTask}.
-        td
-        td
-          +addTask
-      tr
-        if tasks
+        if anyTasks
           td: button.btn#start Start
           td(colspan='3') Begin the estimation session
         else
           td: button.btn(disabled) Start
           td(colspan='3') Add some tasks before starting the session
 
+template(name='TaskList')
+  tr
+    td Tasks:
+    td
+    td.delete
+    td
+      +ImportForm(ImportForm)
+  each tasks.withNum
+    tr.task
+      td
+      td.num #{num}.
+      td.delete
+        with(num=num parent=..)
+          a(href='#', title='Delete task'): span.glyphicon.glyphicon-remove
+      td.desc #{desc}
+  tr.task.addTask
+    td
+    td #{tasks.nextNum}.
+    td
+    td
+      +AddTaskForm(AddTaskForm)
+
 // This is a separate template to allow the nested form to work
-template(name='addTask')
+template(name='AddTaskForm')
   .text
     form.addTask
       input(name='desc', type='text', placeholder='Task description', required)
       button.btn#add(type='submit') Add
 
-template(name='importForm')
-  form#import
-    input(name='from', type='text', placeholder='GitHub user/repo', required)
-    button.btn(type='submit') Import
-  if error
-    .error #{error}
+template(name='ImportForm')
+  if importing
+    form#import
+      input(name='from', type='text', placeholder='GitHub user/repo', required)
+      button.btn(type='submit') Import
+    if error
+      .error #{error}
+  else
+    a#import(href='#') Import from Github
 

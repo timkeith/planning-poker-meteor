@@ -1,18 +1,12 @@
-Router.route '/', 'main'
-
-Router.route '/create'
-
-Router.route '/admin'
+Router.route '/', 'mainRoot'
+Router.route '/create', 'createRoot'
+Router.route '/admin', 'adminRoot'
 
 Router.route '/play/:gameId',
-  subscriptions: () -> [Meteor.subscribe 'games']
+  waitOn: () ->
+    Meteor.subscribe('games')
   action: () ->
-    game = Games.findOne @params.gameId
-    if not game?
-      @render 'badGameId', data: () -> id: @params.gameId
-      return
-    game.debug = true if @params.query.debug
-    @render 'play', data: () -> new Game(game)
+    @render 'playRoot', data: () -> gameId: @params.gameId, debug: @params.query.debug
 
 Router.onBeforeAction () ->
   if !Meteor.userId()

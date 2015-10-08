@@ -9,14 +9,17 @@ indent = 20px
     margin-left: indent
 
 .tasks
-  //.head
-  //  font-weight: bold
+  .head
+    font-size: 110%
+  .task
+    overflow: hidden
+    white-space: nowrap
   .curr
     font-weight: bold
     a
       color: black
   .estimate
-    width: 5em
+    width: 4em
     display: inline-block
     text-align: right
     padding-right: indent
@@ -24,6 +27,8 @@ indent = 20px
     width: 2em
     display: inline-block
     text-align: right
+  .desc
+    display: inline-block
   a
     text-decoration: none
   a:focus
@@ -80,6 +85,14 @@ table.votes
 div#done, div#notdone
   margin-top: 2em
 
-a#join
-  font-weight: bold
-  font-size: 110%
+div#unjoin
+  display: inline
+
+div#join
+  margin-left: indent
+  a
+    font-weight: bold
+    font-size: 110%
+
+.glyphicon
+  padding-left: .2em

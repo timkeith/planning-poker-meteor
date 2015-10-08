@@ -54,14 +54,8 @@ class @Game
   iAmPlaying: () -> @_myState() == PlayerStates.Playing
   iAmJoining: () -> @_myState() == PlayerStates.Joining
   iAmWaiting: () -> @_myState() == PlayerStates.Waiting
-  getPlaying: () -> @_getInState(PlayerStates.Playing)
-  getWaiting: () -> @_getInState(PlayerStates.Waiting)
-  getJoining: () -> @_getInState(PlayerStates.Joining)
-  setPlaying: (playerId) -> @setPlayerState playerId, PlayerStates.Playing
-  setJoining: (playerId) -> @setPlayerState playerId, PlayerStates.Joining
-  setWaiting: (playerId) -> @setPlayerState playerId, PlayerStates.Waiting
   _myState: () -> @players?[User.id()]?.state || PlayerStates.Waiting
-  _getInState: (state) ->
+  getPlayersInState: (state) ->
     (_.extend(player, id: id) for id, player of @players when player.state == state)
 
   currTask: () -> @tasks[@curr-1]

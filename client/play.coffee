@@ -5,36 +5,52 @@ NO_CHOICE = '?'
 # Convert a value in CHOICES to a number
 choiceNum = (choice) -> if not choice? || choice == NO_CHOICE then 0 else +choice
 
-UI.registerHelper 'userId', (context, options) -> User.id()
+Template.playRoot.helpers
+  newPlay: (gameId, debug) -> new Play(gameId, debug)
 
-template
-  name: 'play'
-  events:  # context is game
-    'click #join':    (e) -> @addPlayer()
-    'click #unjoin':  (e) -> @setWaiting(User.id())
-    'click #done':    (e) -> @setDone()
-    'click #notdone': (e) -> @setShowing()
+class Play
+  constructor: (@gameId, @debug) ->
+    initTemplate(@)
+    g = Games.findOne @gameId
+    if g?
+      @game = new Game(g)
+  ShowTasks: () -> new ShowTasks(@game)
+  Estimators: () -> new Estimators(@game)
+  Estimating: () -> new Estimating(@game, @game.currTask())
+  events:
+    'click #join':    (e) -> @game.addPlayer()
+    'click #unjoin':  (e) -> @game.setPlayerState(User.id(), PlayerStates.Waiting)
+    'click #done':    (e) -> @game.setDone()
+    'click #notdone': (e) -> @game.setShowing()
     'click #delete':  (e) ->
-      @delete()
+      @game.delete()
       Router.go('/')
 
-template
-  name: 'estimators'
+class Estimators
+  constructor: (@game) -> initTemplate(@)
+  playing: () ->
+    (_.extend(player, isMod: player.id == @game.mod, isMe: player.id == User.id()) \
+      for player in @game.getPlayersInState(PlayerStates.Playing))
+  joining: () -> @game.getPlayersInState(PlayerStates.Joining)
   events:  # context has game and player
-    'click #allow':  (e) -> @game.setPlaying(@player.id)
-    'click #reject': (e) -> @game.setWaiting(@player.id)
-    'click #leave':  (e) -> @game.setWaiting(@player.id)
+    'click #allow':  (e) -> @game.setPlayerState(@player.id, PlayerStates.Playing)
+    'click #reject': (e) -> @game.setPlayerState(@player.id, PlayerStates.Waiting)
+    'click #leave':  (e) -> @game.setPlayerState(@player.id, PlayerStates.Waiting)
 
-# Context has game and task (the one being estimated)
-template
-  name: 'estimating'
-  helpers:
-    choices: () -> CHOICES
-    isDisabled: () -> @game.isShowing() && !@game.isMod()
-    getClass: () ->
-      choice = choiceNum @choice
-      selected = if @game.isShowing() then @task.proposed else @task.votes[User.id()]
-      return selected == choice && 'active'
+class Estimating
+  constructor: (@game, @task) -> initTemplate(@)
+  ShowVotes: () -> new ShowVotes(@game, @task)
+  ShowVoted: () -> new ShowVoted(@game, @task)
+  Choice: (choice) -> new Choice(@game, @task, choice)
+  choices: () -> CHOICES
+
+class Choice
+  constructor: (@game, @task, @choice) -> initTemplate(@)
+  disabled: () -> @game.isShowing() && !@game.isMod()
+  selected: () ->
+    choice = choiceNum @choice
+    selection = if @game.isShowing() then @task.proposed else @task.votes[User.id()]
+    return selection == choice
   events:
     'click button.choice': (e) ->
       choice = choiceNum @choice
@@ -43,30 +59,35 @@ template
       else
         @game.setVote choice
 
-# Context has game and task (the one being estimated)
-template
-  name: 'showVoted'
-  helpers:
-    players: () ->  # sort by username
-      _(@game.players).sortBy((player) -> player.username.toLowerCase())
-    getClass: () -> !@task.votes[@player.id] && 'not-voted'
+class ShowVoted
+  constructor: (@game, @task) -> initTemplate(@)
+  players: () ->  # {name:..., voted:...} sorted by name
+    sorted = _(@game.players).sortBy((player) -> player.username.toLowerCase())
+    ({ name: player.username, voted: @task.votes[player.id] } for player in sorted)
   events:
     'click #show': (e) ->
-      proposed = middleVote(@game.votes(@task))
-      @game.setCurrProp 'proposed', proposed
+      @game.setCurrProp 'proposed', @_middleVote()
       @game.setShowing()
+  _middleVote: () ->  # choice closest to the middle of the votes
+    sorted = _.reject(_.values(@task.votes).sort(), (x) -> x == 0)
+    mid = Math.floor(sorted.length / 2)
+    if sorted.length == 0
+      return 0
+    else if sorted.length % 2 == 1
+      return sorted[mid]  # use the middle choice
+    else
+      # use the choice closest to the middle of these two
+      lo = +CHOICES.indexOf sorted[mid-1].toString()
+      hi = +CHOICES.indexOf sorted[mid].toString()
+      return +CHOICES[Math.ceil((lo + hi) / 2)]
 
-
-# Context has game and task (the one being estimated)
-template
-  name: 'showVotes'
-  helpers:
-    votes: () -> @game.votes(@task)
+class ShowVotes
+  constructor: (@game, @task) -> initTemplate(@)
+  votes: () -> @game.votes(@task)
   events:
     'click #revote': (e) -> @game.setVoting()
     'click #save': (e) ->
-      estimate = choiceNum @task.proposed
-      @game.setCurrProp 'estimate', estimate
+      @game.setCurrProp 'estimate', choiceNum(@task.proposed)
       @game.setCurrProp 'proposed', undefined
       curr = @game.curr
       loop
@@ -78,32 +99,17 @@ template
       @game.setCurr curr
       @game.setVoting()
 
-# Context has game and task and index
-template
-  name: 'showTask'
-  helpers:
-    estimate: () -> @task.estimate || '-'
-    getClass: () -> @task.num == @game.curr && !@game.isDone() && 'curr'
-    canSelectTask: () -> @game.isMod() && !@game.isDone()
+
+class ShowTasks
+  constructor: (@game) -> initTemplate(@)
+  ShowTask: (task) -> new ShowTask(task, @game)
+
+class ShowTask
+  constructor: (@task, @game) -> initTemplate(@)
+  estimate: () -> @task.estimate || '-'
+  isCurr: () -> @task.num == @game.curr && !@game.isDone()
+  canSelectTask: () -> @game.isMod() && !@game.isDone()
   events:
-    'click .task': (e) ->
+    'click .desc': (e) ->
       @game.setCurr @task.num
       @game.setVoting()
-
-
-## Utilities
-
-# Return the vote closest to the middle
-# sorted is { player: , vote: } sorted by vote
-middleVote = (sorted) ->
-  sorted = (x for x in sorted when x.vote != 0)
-  mid = Math.floor(sorted.length / 2)
-  if sorted.length == 0
-    return 0
-  else if sorted.length % 2 == 1
-    return sorted[mid].vote  # use the middle choice
-  else
-    # use the choice closest to the middle of these two
-    lo = +CHOICES.indexOf sorted[mid-1].vote.toString()
-    hi = +CHOICES.indexOf sorted[mid].vote.toString()
-    return +CHOICES[Math.ceil((lo + hi) / 2)]

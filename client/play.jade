@@ -1,65 +1,63 @@
-template(name='play')
-  h3 Session: #{name}
-  if isDone
-    div Planning session is complete
-    +showTasks
-    if isMod
-      div#notdone
-        a(href='#') Not Done
-        | &nbsp;&ndash; mark the planning session as not complete
-      div#delete
-        a(href='#') Delete
-        | &nbsp;&ndash; delete the planning session (can't be undone)
-  else if iAmWaiting
-    .indent
-      a#join(href='#') Join
-      | &ndash; join the planning session
-  else if iAmJoining
-    .indent
-      | Waiting for approval...
-      a#unjoin(href='#') Leave
-  else if iAmPlaying
-    +estimators
-    if currTask
-      +estimating(game=this task=currTask)
-    else
-      h3 Waiting
-      .indent {{cond isMod 'Select a task to estimate' 'Waiting for a task to estimate'}}
-    +showTasks
-    div#done
-      a(href='#') Done
-      | &nbsp;&ndash; mark the planning session as complete
+template(name='playRoot')
+  +Play(newPlay gameId debug)
+
+template(name='Play')
+  unless game
+    .error No game found with id "#{gameId}"
   else
-    div Internal error; unknown state
-    pre #{debugString}
+    h3 Session: #{game.name}
+    if game.isDone
+      div Planning session is complete
+      +ShowTasks(ShowTasks)
+      if game.isMod
+        +Link(game=game id='notdone' label='Not Done'
+          desc='mark the planning session as not complete')
+        +Link(game=game id='delete' label='Delete'
+          desc="delete the planning session (can't be undone)")
+    else if game.iAmWaiting
+      +Link(game=game id='join' label='Join' desc='join the planning session')
+    else if game.iAmJoining
+      .indent Waiting for approval...
+        +Link(game=game id='unjoin' label='Leave')
+    else if game.iAmPlaying
+      +Estimators(Estimators)
+      if game.currTask
+        +Estimating(Estimating)
+      else
+        h3 Waiting
+        .indent {{cond game.isMod 'Select a task to estimate' 'Waiting for a task to estimate'}}
+      +ShowTasks(ShowTasks)
+      +Link(game=game id='done' label='Done' desc='mark the planning session as complete')
+    else
+      div Internal error; unknown state
+      pre #{game.debugString}
 
-  if debug
-    h3 Debug
-    pre #{debugString}
-
+    if debug
+      h3 Debug
+      pre #{game.debugString}
 
 // List the estimators, context is game
-template(name='estimators')
+template(name='Estimators')
   .estimators
     h5 Estimators:
-    each getPlaying
+    each playing
       div #{username} (#{email})
-        if $eq id ../mod
+        if isMod
           | - moderator
-        else if $eq id userId
-          with(player=this game=..)
+        else if isMe
+          with(player=this game=../game)
             | - #[a#leave(href='#') Leave]
-    if isMod
-      each $mapped getJoining
+    if game.isMod
+      each $mapped joining
         if $first
           h5 Waiting to join:
-        with(player=this game=..)
-          div #{player.username} (#{player.email})
+        div #{username} (#{email})
+          with(player=this game=../game)
             a#allow(href='#', title='Allow'):   span.glyphicon.glyphicon-ok
             a#reject(href='#', title='Reject'): span.glyphicon.glyphicon-remove
 
 // Make estimates and show results
-template(name='estimating')
+template(name='Estimating')
   .estimating
     if game.isShowing
       h3 Reviewing
@@ -69,31 +67,32 @@ template(name='estimating')
       div Select your estimate for this task
     h4 Task: #[.desc #{task.desc}]
     each choices
-      with(game=../game task=../task choice=this)
-        button.btn.choice(class=getClass, disabled=isDisabled) #{choice}
+      +Choice(../Choice this)
     h4 Votes:
     if game.isShowing
-      +showVotes
+      +ShowVotes(ShowVotes)
     else
-      +showVoted
+      +ShowVoted(ShowVoted)
+
+template(name='Choice')
+  button.btn.choice(class='{{cond selected "active"}}', disabled=disabled) #{choice}
 
 // Display who has voted; mod and show votes
-template(name='showVoted')
+template(name='ShowVoted')
   .voted
     each players
-      with(player=this task=../task)
-        span(class=getClass) #{player.username}
+      span(class='{{cond voted "" "not-voted"}}') #{name}
   if game.isMod
     .mod
       if isEmpty task.votes
-        a.disabled#show(href='#') Show
+        a.disabled(href='#') Show
       else
         a#show(href='#') Show
       | &nbsp;&ndash; reveal all estimates for this task
       div To estimate a different task, select it from the list below
 
 // Display everyone's votes; mod can save or re-vote
-template(name='showVotes')
+template(name='ShowVotes')
   table.votes
     each votes
       tr
@@ -101,31 +100,39 @@ template(name='showVotes')
         td #{player.username}
   if game.isMod
     .mod
-      div
-        a#save(href='#') Save
+      div#save
+        a(href='#') Save
         if $eq task.proposed 0
           | &ndash; remove the recorded estimate
         else
           | &ndash; record the selected estimate of #[.est #{task.proposed}]
-      div #[a#revote(href='#') Re-vote] &ndash; restart the voting
+      +Link(game=game id='revote' label='Re-vote' desc='restart the voting')
 
-// Display all tasks; context is game
-template(name='showTasks')
+// Display all tasks; context has game
+template(name='ShowTasks')
   h3 All Tasks
   .tasks
     .head
       .num
       .estimate Estimate
       span Task
-    each asTask tasks
-      +showTask(task=this game=..)
+    each asTask game.tasks
+      +ShowTask(../ShowTask this)
 
 // Display one task: context has task and game
-template(name='showTask')
-  div(class=getClass)
+template(name='ShowTask')
+  .task(class='{{cond isCurr "curr"}}')
     .num #{task.num}.
     .estimate #{estimate} &nbsp; &nbsp;
-    if canSelectTask
-      a.task(href='#') #{task.desc}
-    else
-      | #{task.desc}
+    .desc
+      if canSelectTask
+        a(href='#') #{task.desc}
+      else
+        | #{task.desc}
+
+template(name='Link')
+  div(id=id)
+    a(href='#') #{label}
+    if desc
+      | &ndash; #{desc}
+

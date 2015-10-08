@@ -1,39 +1,30 @@
 log = util.log
 
-class DoCreateData
+Template.createRoot.helpers
+  newCreateForm: () -> new CreateForm()
+
+class CreateForm
   constructor: () ->
-    @_tasks = new SessionVar('tasks', [])
-    @_importing = new ReactiveVar(false)
-    @_error = new ReactiveVar('')
+    initTemplate(@)
+    @_tasks = new Tasks()
     @_name = new ReactiveVar()
     @_gameId = new ReactiveVar()
     @_setName(@defaultName())
-  error:        ()    -> @_error.get()
-  setError:     (msg) -> @_error.set(msg)
-  importing:    ()    -> @_importing.get()
-  setImporting: (b)   -> @_importing.set(b)
-  tasks:        ()    -> @_tasks.get()
-  nextTask:     ()    -> @_tasks.get().length + 1
-  defaultName:  ()    -> new Date().toISOString().replace(/T.*/, '-') + User.name()
-  username:     ()    -> Meteor.user()?.username
-  email:        ()    -> Meteor.user()?.emails?[0]?.address
-  _setName:     (name) -> @_name.set(name); @_gameId.set(@_genId(name))
-  path: () -> '/play/' + @_gameId.get()
-  url: () -> window.location.origin + @path()
-  addTask: (desc) ->
-    if desc
-      t = @tasks()
-      t.push {desc: desc, votes: {}}
-      @_tasks.set(t)
-  removeTask: (num) ->
-    t = @tasks()
-    t.splice(num-1, 1)
-    @_tasks.set(t)
+  TaskList: () -> new TaskList(@_tasks)
+  defaultName: () -> new Date().toISOString().replace(/T.*/, '-') + User.name()
+  url: () -> window.location.origin + @_path()
+  anyTasks: () -> @_tasks.any()
   createGame: () ->
-    tasks = (_.omit(task, 'num') for task in @tasks())
-    @_tasks.set([])
-    game = new Game(_id: @_gameId.get(), name: @_name.get(), tasks: tasks)
+    game = new Game(_id: @_gameId.get(), name: @_name.get(), tasks: @_tasks.getAndClear())
     game.insert()
+  events:
+    'keyup form#createGame input[name="name"]': (e, t) -> @_setName(e.target.value)
+    'focusout form#createGame input[name="name"]': (e, t) -> @_setName(e.target.value)
+    'submit form#createGame': (e, t) ->
+      @createGame()
+      Router.go @_path()
+  _setName: (name) -> @_name.set(name); @_gameId.set(@_genId(name))
+  _path: () -> "/play/#{@_gameId.get()}"
   _genId: (name) ->
     base = name.replace /[^-0-9a-zA-Z$.!*'()]+/g, '_'
     for n in [1..100]
@@ -42,36 +33,33 @@ class DoCreateData
       if not g? then return id
     throw new Meteor.Error("Failed to generate id for name #{name}")
 
-template
-  name: 'create'
-  helpers:
-    doCreateData: () -> new DoCreateData()
-
-template
-  name: 'doCreate'
+class TaskList
+  constructor: (@tasks) -> initTemplate(@)
+  ImportForm: () -> new ImportForm(@tasks)
+  AddTaskForm: () -> new AddTaskForm(@tasks)
   events:
-    'click a#import': (e) -> @setImporting(true)
-    'click td.delete a': (e) -> @parent.removeTask(@num)
-    'keyup form#createGame input[name="name"]': (e, t) -> @_setName(e.target.value)
-    'focusout form#createGame input[name="name"]': (e, t) -> @_setName(e.target.value)
-    'submit form#createGame': (e, t) ->
-      # check for a task desc that hasn't been added
-      @addTask(t.find('form.addTask input[name="desc"]')?.value)
-      @createGame()
-      Router.go @path()
+    'click td.delete a': (e) -> @parent.tasks.remove(@num)
+    'keyup form.addTask input[name="desc"]': (e, t) -> @tasks.setMaybe(e.target.value)
 
-template
-  name: 'addTask'
+class AddTaskForm
+  constructor: (@tasks) -> initTemplate(@)
   events:
     'submit form.addTask': (e) ->
-      desc = e.target.desc.value
+      @tasks.add(e.target.desc.value)
       e.target.desc.value = ''
-      @addTask(desc)
 
-template
-  name: 'importForm'
+class ImportForm
+  constructor: (@tasks) ->
+    initTemplate(@)
+    @_error = new ReactiveVar('')
+    @_importing = new ReactiveVar(false)
+  error:        ()    -> @_error.get()
+  setError:     (msg) -> @_error.set(msg)
+  importing:    ()    -> @_importing.get()
+  setImporting: (b)   -> @_importing.set(b)
   events:
-    'keyup input': (e) -> @setError ''
+    'click a#import': (e) -> @setImporting(true)
+    'focusout form': (e) -> @setError ''
     'submit form#import': (e) ->
       userRepo = e.target.from.value
       userRepo = userRepo.replace(/^https?:/, '')
@@ -79,13 +67,46 @@ template
       userRepo = userRepo.replace(/^\/*repos/, '')
       userRepo = userRepo.replace(/^\/+/, '')
       url = "https://api.github.com/repos/#{userRepo}/issues"
-      context = @
+      self = @
       HTTP.get url, (err, result) ->
         if err
           if result.data?.message?
             err = result.data.message
-          context.setError "Error getting #{url}: #{err}"
+          self.setError "Error getting #{url}: #{err}"
         else
-          context.setImporting false
-          for issue in result.data
-            context.addTask "[#{issue.user.login}] #{issue.title}"
+          issues = result.data
+          if issues.length == 0
+            self.setError "No issues found at #{url}"
+          else
+            self.setImporting false
+            for issue in issues
+              self.tasks.add "[#{issue.user.login}] #{issue.title}"
+
+
+# Manage the current list of tasks, stored in a session variable
+class Tasks
+  constructor: () ->
+    @_tasks = new SessionVar('tasks', [])
+    @_maybe = new ReactiveVar('')  # desc that has been typed but not added
+  nextNum: () -> @get().length + 1
+  any: () -> @get().length > 0 || @_maybe.get() != ''
+  get: () -> @_tasks.get()
+  withNum: () -> _.extend(task, num: index+1) for task, index in @get()
+  getAndClear: () ->
+    @add(@_maybe.get())
+    t = @get()
+    @_set([])
+    return t
+  add: (desc) ->
+    if desc
+      t = @get()
+      t.push {desc: desc, votes: {}}
+      @_set(t)
+    @_maybe.set('')
+  setMaybe: (desc) -> @_maybe.set(desc)
+  remove: (num) ->
+    t = @get()
+    t.splice(num-1, 1)
+    @_set(t)
+  _set: (t) -> @_tasks.set(t)
+

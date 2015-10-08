@@ -1,5 +1,13 @@
-template(name='admin')
+template(name='adminRoot')
+  +Admin(newAdmin)
+
+template(name='Admin')
   #users
+    +UsersList(UsersList)
+  #games
+    +SessionsList(SessionsList)
+
+template(name='UsersList')
     h3 Users:
     if $eq 0 users.length
       i none
@@ -13,14 +21,14 @@ template(name='admin')
         each users
           tr
             td
-              if isAdmin
-                a#deleteUser(href='#', title='Delete'): span.glyphicon.glyphicon-remove
+              if ../isAdmin
+                a.deleteUser(href='#', title='Delete'): span.glyphicon.glyphicon-remove
             td #{_id}
             td #{username}
-            td #{email}
+            td {{../email this}}
 
-  #games
-    h3 Games:
+template(name='SessionsList')
+    h3 Sessions:
     if $eq 0 games.length
       i none
     else
@@ -33,8 +41,9 @@ template(name='admin')
         each games
           tr
             td
-              if isAdmin
-                a#deleteGame(href='#', title='Delete'): span.glyphicon.glyphicon-remove
-            td #{_id}
+              if ../isAdmin
+                a.deleteGame(href='#', title='Delete'): span.glyphicon.glyphicon-remove
+            td.game
+              a(href='#') #{_id}
             td #{name}
-            td #{modEmail}
+            td {{../modEmail this}}

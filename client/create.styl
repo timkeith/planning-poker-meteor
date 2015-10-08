@@ -4,16 +4,21 @@ form#createGame
   td
     padding-left: 0
     padding-top: 1em
+  td.num
+    text-align: right
   td.delete
-    padding-left: .2em
     padding-bottom: 0
-    width: 1em
     vertical-align: bottom
     a
-      display: none
+      opacity: 0
   tr:hover td.delete a
-        display: inline
-        color: #808080
+    display: inline
+    color: #808080
+    opacity: 1
+  td.desc
+    text-overflow: ellipsis
+    overflow: hidden
+    white-space: nowrap
   tr.task
     td
       padding-top: 0

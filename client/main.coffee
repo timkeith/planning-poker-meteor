@@ -1,85 +1,70 @@
 log = util.log
 
-# Base class for data context with error field
-class WithError
-  constructor: () ->
-    @error = ReactiveVar('')
-  @allErrors: []
-  getError: () -> @error.get()
-  setError: (msg) ->
-    @error.set(msg)
-    WithError.allErrors.push(@error)
-    false
-  @clearErrors: () ->
-    e.set('') for e in WithError.allErrors
-    WithError.allErrors = []
-    false
+Template.mainRoot.helpers
+  newMainPage: () -> new MainPage()
 
-class FindByIdData extends WithError
-  constructor: () -> super()
-
-class FindByModData extends WithError
-  constructor: () ->
-    super()
-    @_games = new ReactiveVar([])
-  games: () -> @_games.get()
-  setGames: (g) -> @_games.set(g)
-
-class MyGamesData
-  gamesNotDone: () -> @_findGames($ne: GameStates.Done)
-  gamesDone: () -> @_findGames(GameStates.Done)
-  _findGames: (state) ->
-    Games.find({mod: Meteor.userId(), state: state}, {sort: {createdAt: -1}}).fetch()
-
-template
-  name: 'main'
-  helpers:
-    findByIdData: () -> new FindByIdData()
-    findByModData: () -> new FindByModData()
-    myGamesData: () -> new MyGamesData()
+class MainPage
+  constructor: () -> initTemplate(@)
+  FindById: () -> new FindById()
+  FindByMod: () -> new FindByMod()
+  MyGames: () -> new MyGames()
   events:
     'click #create': (e) -> Router.go('/create')
-    'keyup input': (e) -> if e.keyCode != 13 then WithError.clearErrors()
+    'keyup input': (e) -> if e.keyCode != 13 then PageError.clearAll()
 
-template
-  name: 'findById'
+class FindById
+  constructor: () ->
+    initTemplate(@)
+    @error = new PageError()
   events:
     'submit form': (e, t) ->
       gameId = e.target.gameId.value
-      if not gameId
-        return @setError "The session id is required"
       game = Games.findOne gameId
       if not game?
-        return @setError "There is no session with id '#{gameId}'"
+        return @error.set "There is no session with id '#{gameId}'"
       Router.go "/play/#{gameId}"
 
-
-template
-  name: 'findByMod'
+class FindByMod
+  constructor: () ->
+    initTemplate(@)
+    @error = new PageError()
+    @_games = new ReactiveVar([])
+  ShowGames: () -> new ShowGames('', @_games.get())
   events:
     'submit form': (e,t) ->
+      @_games.set([])
       email = e.target.email.value
-      if not email?
-        return @setError "The email address is required"
       u = Meteor.users.findOne 'emails.0.address': email
       if not u?
-        return @setError "There is no user with email address '#{email}'"
-      g = Games.find({mod: u._id, state: {$ne: GameStates.Done}}, {sort: {createdAt: -1}})
-      @setGames(g.fetch())
-      if @games().length == 0
-        return @setError "There are no sessions moderated by #{email}"
+        return @error.set "There is no user with email address '#{email}'"
+      g = Games.find({mod: u._id, state: {$ne: GameStates.Done}}, {sort: {createdAt: -1}}).fetch()
+      @_games.set(g)
+      if g.length == 0
+        return @error.set "There are no sessions moderated by #{email}"
 
-template
-  name: 'myGames'
+class MyGames
+  constructor: () -> initTemplate(@)
+  ShowGames: (kind) ->
+    if kind == 'done'
+      new ShowGames('Completed sessions:', @_findGames(GameStates.Done))
+    else if kind == 'notdone'
+      new ShowGames('None', @_findGames($ne: GameStates.Done))
+    else
+      throw new Meteor.Error("Bad kind of games: #{kind}")
+  _findGames: (state) ->
+    Games.find({mod: Meteor.userId(), state: state}, {sort: {createdAt: -1}}).fetch()
 
-# Display the matching games
-template
-  name: 'showGames'
-  helpers:
-    estimatedCount: (game) ->
-      n = 0
-      n += 1 for task in @tasks when task.estimate
-      return n
+class ShowGames
+  constructor: (@title, @games) -> initTemplate(@)
+  ShowGame: (game) -> new ShowGame(game)
+
+class ShowGame
+  constructor: (data) ->
+    initTemplate(@)
+    _.extend(@, data)
+  myGame: () -> @mod == Meteor.userId()
+  isDone: () -> @state == GameStates.Done
+  estimatedCount: () -> _.reduce(@tasks, ((memo, task) -> memo + +(task.estimate > 0)), 0)
   events:
     'click .play': (e, t) -> Router.go "/play/#{@_id}"
     'click .delete': (e, t) -> new Game(@).delete()
