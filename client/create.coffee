@@ -5,7 +5,7 @@ Template.createRoot.helpers
 
 class CreateForm
   constructor: () ->
-    initTemplate(@)
+    initTemplate('CreateForm', @)
     @_tasks = new Tasks()
     @_name = new ReactiveVar()
     @_gameId = new ReactiveVar()
@@ -34,7 +34,7 @@ class CreateForm
     throw new Meteor.Error("Failed to generate id for name #{name}")
 
 class TaskList
-  constructor: (@tasks) -> initTemplate(@)
+  constructor: (@tasks) -> initTemplate('TaskList', @)
   ImportForm: () -> new ImportForm(@tasks)
   AddTaskForm: () -> new AddTaskForm(@tasks)
   events:
@@ -42,7 +42,7 @@ class TaskList
     'keyup form.addTask input[name="desc"]': (e, t) -> @tasks.setMaybe(e.target.value)
 
 class AddTaskForm
-  constructor: (@tasks) -> initTemplate(@)
+  constructor: (@tasks) -> initTemplate('AddTaskForm', @)
   events:
     'submit form.addTask': (e) ->
       @tasks.add(e.target.desc.value)
@@ -50,7 +50,7 @@ class AddTaskForm
 
 class ImportForm
   constructor: (@tasks) ->
-    initTemplate(@)
+    initTemplate('ImportForm', @)
     @_error = new ReactiveVar('')
     @_importing = new ReactiveVar(false)
   error:        ()    -> @_error.get()

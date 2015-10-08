@@ -10,7 +10,7 @@ Template.playRoot.helpers
 
 class Play
   constructor: (@gameId, @debug) ->
-    initTemplate(@)
+    initTemplate('Play', @)
     g = Games.findOne @gameId
     if g?
       @game = new Game(g)
@@ -27,7 +27,7 @@ class Play
       Router.go('/')
 
 class Estimators
-  constructor: (@game) -> initTemplate(@)
+  constructor: (@game) -> initTemplate('Estimators', @)
   playing: () ->
     (_.extend(player, isMod: player.id == @game.mod, isMe: player.id == User.id()) \
       for player in @game.getPlayersInState(PlayerStates.Playing))
@@ -38,14 +38,14 @@ class Estimators
     'click #leave':  (e) -> @game.setPlayerState(@player.id, PlayerStates.Waiting)
 
 class Estimating
-  constructor: (@game, @task) -> initTemplate(@)
+  constructor: (@game, @task) -> initTemplate('Estimating', @)
   ShowVotes: () -> new ShowVotes(@game, @task)
   ShowVoted: () -> new ShowVoted(@game, @task)
   Choice: (choice) -> new Choice(@game, @task, choice)
   choices: () -> CHOICES
 
 class Choice
-  constructor: (@game, @task, @choice) -> initTemplate(@)
+  constructor: (@game, @task, @choice) -> initTemplate('Choice', @)
   disabled: () -> @game.isShowing() && !@game.isMod()
   selected: () ->
     choice = choiceNum @choice
@@ -60,7 +60,7 @@ class Choice
         @game.setVote choice
 
 class ShowVoted
-  constructor: (@game, @task) -> initTemplate(@)
+  constructor: (@game, @task) -> initTemplate('ShowVoted', @)
   players: () ->  # {name:..., voted:...} sorted by name
     sorted = _(@game.players).sortBy((player) -> player.username.toLowerCase())
     ({ name: player.username, voted: @task.votes[player.id] } for player in sorted)
@@ -82,7 +82,7 @@ class ShowVoted
       return +CHOICES[Math.ceil((lo + hi) / 2)]
 
 class ShowVotes
-  constructor: (@game, @task) -> initTemplate(@)
+  constructor: (@game, @task) -> initTemplate('ShowVotes', @)
   votes: () -> @game.votes(@task)
   events:
     'click #revote': (e) -> @game.setVoting()
@@ -99,13 +99,12 @@ class ShowVotes
       @game.setCurr curr
       @game.setVoting()
 
-
 class ShowTasks
-  constructor: (@game) -> initTemplate(@)
+  constructor: (@game) -> initTemplate('ShowTasks', @)
   ShowTask: (task) -> new ShowTask(task, @game)
 
 class ShowTask
-  constructor: (@task, @game) -> initTemplate(@)
+  constructor: (@task, @game) -> initTemplate('ShowTask', @)
   estimate: () -> @task.estimate || '-'
   isCurr: () -> @task.num == @game.curr && !@game.isDone()
   canSelectTask: () -> @game.isMod() && !@game.isDone()

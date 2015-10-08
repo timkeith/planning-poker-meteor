@@ -16,11 +16,11 @@
   # Create $set object for setting deeply nested field in Mongo
   $set: (key, value) ->
     if value == undefined
-      log "delete #{key}"
+      util.log "delete #{key}"
       set = $unset: {}
       set.$unset[key] = ''
     else
-      log "set #{key} to #{JSON.stringify(value)}"
+      util.log "set #{key} to #{JSON.stringify(value)}"
       set = $set: {}
       set.$set[key] = value
     return set

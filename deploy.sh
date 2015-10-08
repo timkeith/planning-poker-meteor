@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-meteor deploy estimation.meteor.com
+meteor deploy estimation.meteor.com $*

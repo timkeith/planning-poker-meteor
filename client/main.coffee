@@ -4,7 +4,7 @@ Template.mainRoot.helpers
   newMainPage: () -> new MainPage()
 
 class MainPage
-  constructor: () -> initTemplate(@)
+  constructor: () -> initTemplate('MainPage', @)
   FindById: () -> new FindById()
   FindByMod: () -> new FindByMod()
   MyGames: () -> new MyGames()
@@ -14,7 +14,7 @@ class MainPage
 
 class FindById
   constructor: () ->
-    initTemplate(@)
+    initTemplate('FindById', @)
     @error = new PageError()
   events:
     'submit form': (e, t) ->
@@ -26,7 +26,7 @@ class FindById
 
 class FindByMod
   constructor: () ->
-    initTemplate(@)
+    initTemplate('FindByMod', @)
     @error = new PageError()
     @_games = new ReactiveVar([])
   ShowGames: () -> new ShowGames('', @_games.get())
@@ -43,7 +43,7 @@ class FindByMod
         return @error.set "There are no sessions moderated by #{email}"
 
 class MyGames
-  constructor: () -> initTemplate(@)
+  constructor: () -> initTemplate('MyGames', @)
   ShowGames: (kind) ->
     if kind == 'done'
       new ShowGames('Completed sessions:', @_findGames(GameStates.Done))
@@ -55,12 +55,12 @@ class MyGames
     Games.find({mod: Meteor.userId(), state: state}, {sort: {createdAt: -1}}).fetch()
 
 class ShowGames
-  constructor: (@title, @games) -> initTemplate(@)
+  constructor: (@title, @games) -> initTemplate('ShowGames', @)
   ShowGame: (game) -> new ShowGame(game)
 
 class ShowGame
   constructor: (data) ->
-    initTemplate(@)
+    initTemplate('ShowGame', @)
     _.extend(@, data)
   myGame: () -> @mod == Meteor.userId()
   isDone: () -> @state == GameStates.Done

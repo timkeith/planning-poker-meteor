@@ -2,14 +2,13 @@
 Initialize template classes with:
 class FooTemplate
   constructor: (...) ->
-    initTemplate(@)
+    initTemplate('FooTemplate', @)
   helper1: () -> ...
   onRendered/onCreated/onDestroyed: () -> ...
   events: ...
   eventsAllowDefault: ...
 ###
-@initTemplate = (t) ->
-  name = t.constructor.name
+@initTemplate = (name, t) ->
   proto = t.__proto__
   if proto._did_template_?
     return  # already registered this one
