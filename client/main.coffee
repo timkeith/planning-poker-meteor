@@ -59,13 +59,11 @@ class ShowGames
   ShowGame: (game) -> new ShowGame(game)
 
 class ShowGame
-  constructor: (data) ->
-    initTemplate('ShowGame', @)
-    _.extend(@, data)
-  myGame: () -> @mod == Meteor.userId()
-  isDone: () -> @state == GameStates.Done
-  estimatedCount: () -> _.reduce(@tasks, ((memo, task) -> memo + +(task.estimate > 0)), 0)
+  constructor: (@game) -> initTemplate('ShowGame', @)
+  myGame: () -> @game.mod == Meteor.userId()
+  isDone: () -> @game.state == GameStates.Done
+  estimatedCount: () -> _.reduce(@game.tasks, ((memo, task) -> memo + +(task.estimate > 0)), 0)
   events:
-    'click .play': (e, t) -> Router.go "/play/#{@_id}"
-    'click .delete': (e, t) -> new Game(@).delete()
-    'click .complete': (e, t) -> new Game(@).setDone()
+    'click .play': (e, t) -> Router.go "/play/#{@game._id}"
+    'click .delete': (e, t) -> new Game(@game).delete()
+    'click .complete': (e, t) -> new Game(@game).setDone()

@@ -51,5 +51,5 @@ template(name='ShowGame')
         a.delete(href='#', title='Delete session'): span.glyphicon.glyphicon-remove
       else
         a.complete(href='#', title='Mark session done'): span.glyphicon.glyphicon-ok
-  a.play(href='#') #{name}
-  |  &ndash; #{estimatedCount}/#{tasks.length} tasks estimated
+  a.play(href='#') #{game.name}
+  |  &ndash; #{estimatedCount}/#{game.tasks.length} tasks estimated
