@@ -1,14 +1,9 @@
 @util =
   log: (x, y) ->
     if y?
-      console.log x, ': ', y
+      console.log x, ':', y
     else
       console.log x
-
-  extend: (obj, props) ->
-    for key, val of props
-      obj[key] = val
-    return obj
 
   parent: () -> Template.parentData(1)
   self: () -> Template.parentData(0)

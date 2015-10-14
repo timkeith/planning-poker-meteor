@@ -102,6 +102,7 @@ class ShowVotes
 class ShowTasks
   constructor: (@game) -> initTemplate('ShowTasks', @)
   ShowTask: (task) -> new ShowTask(task, @game)
+  tasks: () -> _.extend(task, num: index+1) for task, index in @game.tasks
 
 class ShowTask
   constructor: (@task, @game) -> initTemplate('ShowTask', @)

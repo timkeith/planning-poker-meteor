@@ -16,4 +16,4 @@ UI.registerHelper 'stringify', stringify
 
 UI.registerHelper 'isEmpty', (x) -> _.isEmpty(x)
 
-UI.registerHelper 'currentUserEmail', () -> Meteor.user()?.emails?[0]?.address
+UI.registerHelper 'currentUserEmail', () -> User.email()

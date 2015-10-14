@@ -8,17 +8,6 @@ if Meteor.isClient
   Meteor.subscribe 'users'
   Meteor.subscribe 'games'
 
-if Meteor.isClient
-  UI.registerHelper 'asTask', (arr, options) ->
-    parentContext = @
-    if !Array.isArray(arr)
-      try
-        arr = arr.fetch()
-      catch e
-        console.log("Not an array or collection", arr)
-        return []
-    return (_.extend(item, num: index+1) for item, index in arr)
-
 # Possible states a game can be in
 @GameStates =
   Done:    'done'

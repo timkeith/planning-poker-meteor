@@ -116,7 +116,7 @@ template(name='ShowTasks')
       .num
       .estimate Estimate
       span Task
-    each asTask game.tasks
+    each tasks
       +ShowTask(../ShowTask this)
 
 // Display one task: context has task and game
